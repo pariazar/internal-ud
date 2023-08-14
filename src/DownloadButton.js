@@ -1,31 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
-import styled from '@emotion/styled';
-import { keyframes } from '@emotion/react';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import DoneIcon from '@mui/icons-material/Done';
+import { SpinningCircularProgress } from './SpinningCircularProgress';
 
-// Define the spinning animation using keyframes
-const spin = keyframes`
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-`;
-
-// Create a styled component with the spinning animation
-const SpinningCircularProgress = styled(CircularProgress)`
-  animation: ${spin} 2s linear infinite; /* Customize animation duration and timing function */
-`;
-
-const DownloadButton = ({ url, filename, fileSize }) => {
+const DownloadButton = ({ url, filename }) => {
   const [progress, setProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
+  const [fileSize, setFileSize] = useState(0);
 
   useEffect(() => {
     if (progress === 100) {
@@ -35,8 +19,13 @@ const DownloadButton = ({ url, filename, fileSize }) => {
       }, 1000); // Reset progress after completion (1 second delay)
     }
   }, [progress]);
+
   const downloadFile = async () => {
     try {
+      const responseFileMeta = await axios.head(url);
+      const contentLength = responseFileMeta.headers['content-length'];
+      setFileSize(Math.round(contentLength / 1024)); // Convert to KB
+
       setIsDownloading(true); // Set downloading state
       setProgress(1); // Start the progress animation
 
