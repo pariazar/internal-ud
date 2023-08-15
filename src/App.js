@@ -1,9 +1,7 @@
 // App.js
 
 import DownloadButton from './DownloadButton';
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
+import React from 'react';
 import { Container, CssBaseline, Paper } from '@mui/material';
 import UploadButton from './UploadButton'; // Adjust the path to the actual location of your FileUploader component
 
@@ -15,10 +13,8 @@ const App = () => {
       <Container component="main" maxWidth="sm">
         <CssBaseline />
         <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
-          <div className="app">
-            <h1>File Download with Progress Bar</h1>
-            <DownloadButton url={fileLink} filename="eminem.mp3" />
-          </div>
+          <h1>File Download with Progress Bar</h1>
+          <DownloadButton url={fileLink} filename="eminem.mp3" />
           <UploadButton />
         </Paper>
       </Container>
