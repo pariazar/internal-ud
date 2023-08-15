@@ -3,13 +3,15 @@ import { Box, Typography } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
 import axios from 'axios';
 import { SpinningCircularProgress } from './SpinningCircularProgress';
-import debounce from 'lodash.debounce'; // Import debounce function
+import debounce from 'lodash.debounce';
 
 const UploadButton = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [cancelTokenSource, setCancelTokenSource] = useState(null); // Declare cancelTokenSource
 
-  // Debounce the progress update to avoid unnecessary re-renders
   const debouncedProgressUpdate = useCallback(
     debounce((progress) => {
       setUploadProgress(progress);
@@ -33,11 +35,17 @@ const UploadButton = () => {
   };
 
   const handleUpload = async () => {
-    if (selectedFile) {
+    if (selectedFile && !uploading) {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
       try {
+        setUploading(true);
+        setCanceling(false);
+
+        const source = axios.CancelToken.source();
+        setCancelTokenSource(source); // Store the cancelTokenSource
+
         const response = await axios.post(
           'http://localhost:3000/upload',
           formData,
@@ -46,19 +54,36 @@ const UploadButton = () => {
               const progress = Math.round(
                 (progressEvent.loaded / progressEvent.total) * 100
               );
-              debouncedProgressUpdate(progress); // Debounced progress update
+              debouncedProgressUpdate(progress);
             },
+            cancelToken: source.token,
           }
         );
 
         console.log(response.data);
       } catch (error) {
-        console.error('Error uploading file:', error);
+        if (axios.isCancel(error)) {
+          console.log('Upload canceled');
+        } else {
+          console.error('Error uploading file:', error);
+        }
+      } finally {
+        setUploading(false);
+        setSelectedFile(null);
+        setUploadProgress(0);
+        setCancelTokenSource(null); // Clear the cancelTokenSource
       }
     }
   };
 
-  // Calculate the current uploaded size based on progress
+  const handleCancel = () => {
+    if (uploading && cancelTokenSource) {
+      // Check if cancelTokenSource exists
+      setCanceling(true);
+      cancelTokenSource.cancel();
+    }
+  };
+
   const currentUploadedSize = Math.round(
     (selectedFile?.size * uploadProgress) / 100
   );
@@ -83,7 +108,6 @@ const UploadButton = () => {
           padding: '20px',
           textAlign: 'center',
           cursor: 'pointer',
-          /* Add more styles as needed */
         }}
       >
         {selectedFile ? (
@@ -102,6 +126,16 @@ const UploadButton = () => {
             <Typography variant="caption">
               {uploadProgress}% Uploaded - {formattedSize(currentUploadedSize)}
             </Typography>
+            <div>
+              <button onClick={handleUpload} disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Start Upload'}
+              </button>
+              {uploading && (
+                <button onClick={handleCancel} disabled={canceling}>
+                  {canceling ? 'Canceling...' : 'Cancel Upload'}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div>
@@ -110,7 +144,6 @@ const UploadButton = () => {
           </div>
         )}
       </div>
-      <button onClick={handleUpload}>Start Upload</button>
     </Box>
   );
 };
