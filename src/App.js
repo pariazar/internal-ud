@@ -10,7 +10,7 @@ const App = () => {
 
   return (
     <>
-      <Container component="main" maxWidth="sm">
+      <Container component="main">
         <CssBaseline />
         <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
           <h1>File Download with Progress Bar</h1>

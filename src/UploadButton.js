@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Input, TextField, Typography } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
 import axios from 'axios';
 import { SpinningCircularProgress } from './SpinningCircularProgress';
 import debounce from 'lodash.debounce';
+import ChatApp from './SampleChat';
 
 const UploadButton = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -11,6 +12,7 @@ const UploadButton = () => {
   const [uploading, setUploading] = useState(false);
   const [canceling, setCanceling] = useState(false);
   const [cancelTokenSource, setCancelTokenSource] = useState(null); // Declare cancelTokenSource
+  const [isDragging, setIsDragging] = useState(false); // State for drag-and-drop
 
   const debouncedProgressUpdate = useCallback(
     debounce((progress) => {
@@ -28,10 +30,20 @@ const UploadButton = () => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
     setSelectedFile(file);
+    setIsDragging(false); // Reset dragging state
   };
 
   const handleDragOver = (event) => {
     event.preventDefault();
+    setIsDragging(true); // Set dragging state
+  };
+
+  const handleDragEnter = () => {
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
   };
 
   const handleUpload = async () => {
@@ -103,11 +115,14 @@ const UploadButton = () => {
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter} // Handle drag enter
+        onDragLeave={handleDragLeave} // Handle drag leave
         style={{
-          border: '2px dashed #ccc',
-          padding: '20px',
+          border: isDragging ? '2px dashed #ccc' : '',
+          padding: isDragging ? '220px' : '',
           textAlign: 'center',
           cursor: 'pointer',
+          backgroundColor: isDragging ? '#f5f5f5' : 'transparent', // Apply background color during drag
         }}
       >
         {selectedFile ? (
@@ -137,11 +152,13 @@ const UploadButton = () => {
               )}
             </div>
           </div>
-        ) : (
+        ) : isDragging ? (
           <div>
             <CloudUpload fontSize="large" />
             <Typography>Drag & Drop a file here or click to select</Typography>
           </div>
+        ) : (
+          <ChatApp />
         )}
       </div>
     </Box>
