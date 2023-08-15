@@ -9,15 +9,13 @@ const DownloadButton = ({ url, filename }) => {
   const [progress, setProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
-  const [fileSize, setFileSize] = useState(0);
+  const [fileSize, setFileSize] = useState(null);
 
   const downloadFile = useCallback(async () => {
     try {
       setIsDownloading(true);
 
-      const response = await axios({
-        url,
-        method: 'GET',
+      const response = await axios.get(url, {
         responseType: 'blob',
         onDownloadProgress: (progressEvent) => {
           const percentage = Math.round(
@@ -25,10 +23,8 @@ const DownloadButton = ({ url, filename }) => {
           );
           setProgress(percentage);
 
-          if (!fileSize) {
-            // If the file size is not set, try to retrieve it from the response headers
-            const contentLength = progressEvent.total;
-            setFileSize(Math.round(contentLength / 1024)); // Convert to KB
+          if (fileSize === null) {
+            setFileSize(Math.round(progressEvent.total / 1024)); // Convert to KB
           }
         },
       });
