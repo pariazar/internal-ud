@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
 import axios from 'axios';
 import { SpinningCircularProgress } from './SpinningCircularProgress';
+import debounce from 'lodash.debounce'; // Import debounce function
 
 const UploadButton = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Debounce the progress update to avoid unnecessary re-renders
+  const debouncedProgressUpdate = useCallback(
+    debounce((progress) => {
+      setUploadProgress(progress);
+    }, 100),
+    []
+  );
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -37,7 +46,7 @@ const UploadButton = () => {
               const progress = Math.round(
                 (progressEvent.loaded / progressEvent.total) * 100
               );
-              setUploadProgress(progress);
+              debouncedProgressUpdate(progress); // Debounced progress update
             },
           }
         );
@@ -54,13 +63,14 @@ const UploadButton = () => {
     (selectedFile?.size * uploadProgress) / 100
   );
 
-  // Convert the sizes to KB or MB as appropriate
-  const formattedCurrentSize =
-    currentUploadedSize >= 1024 && currentUploadedSize < 1024 * 1024
-      ? `${(currentUploadedSize / 1024).toFixed(2)} KB`
-      : currentUploadedSize >= 1024 * 1024
-      ? `${(currentUploadedSize / (1024 * 1024)).toFixed(2)} MB`
-      : `${currentUploadedSize} bytes`;
+  const formattedSize = (sizeInBytes) => {
+    if (sizeInBytes >= 1024 * 1024) {
+      return `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
+    } else if (sizeInBytes >= 1024) {
+      return `${(sizeInBytes / 1024).toFixed(2)} KB`;
+    }
+    return `${sizeInBytes} bytes`;
+  };
 
   return (
     <Box>
@@ -73,6 +83,7 @@ const UploadButton = () => {
           padding: '20px',
           textAlign: 'center',
           cursor: 'pointer',
+          /* Add more styles as needed */
         }}
       >
         {selectedFile ? (
@@ -81,8 +92,7 @@ const UploadButton = () => {
               Selected File: {selectedFile.name}
             </Typography>
             <Typography variant="subtitle2">
-              Size: {selectedFile.size / 1024} KB (
-              {selectedFile.size / (1024 * 1024)} MB)
+              Size: {formattedSize(selectedFile.size)}
             </Typography>
             <SpinningCircularProgress
               variant="determinate"
@@ -90,7 +100,7 @@ const UploadButton = () => {
               size={60}
             />
             <Typography variant="caption">
-              {uploadProgress}% Uploaded - {formattedCurrentSize}
+              {uploadProgress}% Uploaded - {formattedSize(currentUploadedSize)}
             </Typography>
           </div>
         ) : (
